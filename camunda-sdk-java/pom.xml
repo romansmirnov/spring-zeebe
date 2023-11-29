@@ -24,6 +24,7 @@
 
   <modules>
     <module>java-client-operate</module>
+    <module>java-client-tasklist</module>
     <module>java-common</module>
   </modules>
 </project>
