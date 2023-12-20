@@ -3,6 +3,7 @@ package io.camunda.zeebe.spring.client.configuration;
 import io.camunda.common.auth.Authentication;
 import io.camunda.common.auth.DefaultNoopAuthentication;
 import io.camunda.common.auth.Product;
+import io.camunda.identity.sdk.IdentityConfiguration;
 import io.camunda.zeebe.client.CredentialsProvider;
 import io.camunda.zeebe.client.api.JsonMapper;
 import io.camunda.zeebe.client.impl.oauth.OAuthCredentialsProviderBuilder;
@@ -35,6 +36,9 @@ public class ZeebeClientConfiguration implements io.camunda.zeebe.client.ZeebeCl
 
   @Autowired
   private Authentication authentication;
+
+  @Autowired
+  private IdentityConfiguration identityConfigurationFromProperties;
 
   @Lazy // Must be lazy, otherwise we get circular dependencies on beans
   @Autowired
@@ -116,8 +120,8 @@ public class ZeebeClientConfiguration implements io.camunda.zeebe.client.ZeebeCl
 
   @Override
   public CredentialsProvider getCredentialsProvider() {
-    // TODO: Refactor when integrating Identity SDK
-    if (commonConfigurationProperties.getEnabled() && !(authentication instanceof DefaultNoopAuthentication)) {
+    // If using Identity then its Self-Managed
+    if (hasText(identityConfigurationFromProperties.getClientId())) {
       return new CredentialsProvider() {
         @Override
         public void applyCredentials(Metadata headers) {
@@ -131,6 +135,10 @@ public class ZeebeClientConfiguration implements io.camunda.zeebe.client.ZeebeCl
           return ((StatusRuntimeException) throwable).getStatus() == Status.DEADLINE_EXCEEDED;
         }
       };
+    }
+    // TODO: Refactor when integrating Identity SDK
+    if (commonConfigurationProperties.getEnabled() && !(authentication instanceof DefaultNoopAuthentication)) {
+
     }
     if (hasText(properties.getCloud().getClientId()) && hasText(properties.getCloud().getClientSecret())) {
 //        log.debug("Client ID and secret are configured. Creating OAuthCredientialsProvider with: {}", this);

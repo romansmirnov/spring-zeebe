@@ -23,4 +23,10 @@ public class CamundaOperateClientCondition extends AnyNestedCondition {
 
   @ConditionalOnProperty(name = "camunda.operate.client.base-url")
   static class BaseUrlCondition { }
+
+  @ConditionalOnProperty(name = "camunda.operate.client.url")
+  static class UrlCondition { }
+
+  @ConditionalOnProperty(name = "camunda.operate.client.enabled")
+  static class EnabledCondition { }
 }

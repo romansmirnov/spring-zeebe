@@ -143,7 +143,7 @@ public class CamundaOperateClientConfigurationProperties {
       this.setEnabled(true);
     } else if (this.getUsername() != null && this.getPassword() != null) {
       this.setEnabled(true);
-    } else if (this.getAuthUrl() != null || this.getBaseUrl() != null) {
+    } else if (this.getAuthUrl() != null || this.getBaseUrl() != null || this.getUrl() != null) {
       this.setEnabled(true);
     }
   }

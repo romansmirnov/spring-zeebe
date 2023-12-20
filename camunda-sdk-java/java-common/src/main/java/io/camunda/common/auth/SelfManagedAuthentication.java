@@ -1,7 +1,12 @@
 package io.camunda.common.auth;
 
+import io.camunda.common.auth.identity.IdentityContainer;
+import io.camunda.common.auth.identity.IdentityMap;
 import io.camunda.common.json.JsonMapper;
 import io.camunda.common.json.SdkObjectMapper;
+import io.camunda.identity.sdk.Identity;
+import io.camunda.identity.sdk.IdentityConfiguration;
+import io.camunda.identity.sdk.authentication.Tokens;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
@@ -30,15 +35,16 @@ public class SelfManagedAuthentication extends JwtAuthentication {
   private String keycloakRealm = "camunda-platform";
   private String keycloakUrl;
   private JwtConfig jwtConfig;
-  private Map<Product, String> tokens;
-  private Map<Product, LocalDateTime> expirations;
+  //private Map<Product, String> tokens;
+  //private Map<Product, LocalDateTime> expirations;
 
   // TODO: have a single object mapper to be used all throughout the SDK, i.e.bean injection
   private JsonMapper jsonMapper = new SdkObjectMapper();
 
+  private IdentityMap identityMap;
+
   public SelfManagedAuthentication() {
-    tokens = new HashMap<>();
-    expirations = new HashMap<>();
+    //tokens = new HashMap<>();
   }
 
   public static SelfManagedAuthenticationBuilder builder() {
@@ -57,63 +63,60 @@ public class SelfManagedAuthentication extends JwtAuthentication {
     this.jwtConfig = jwtConfig;
   }
 
+  public void setIdentityMap(IdentityMap identityMap) {
+    this.identityMap = identityMap;
+  }
+
   @Override
   public Authentication build() {
-    authUrl = keycloakUrl+"/auth/realms/"+keycloakRealm+"/protocol/openid-connect/token";
-    jwtConfig.getMap().forEach(this::retrieveToken);
+    //authUrl = keycloakUrl+"/auth/realms/"+keycloakRealm+"/protocol/openid-connect/token";
+
+    // reconfigure Identity with user provided fields
+//    IdentityConfiguration.Builder newIdentityConfigurationBuilder = new IdentityConfiguration.Builder();
+//    if (keycloakUrl != null) {
+//      newIdentityConfigurationBuilder.withIssuerBackendUrl(keycloakUrl);
+//    }
+
+
+
+    //identity = new Identity(identityConfiguration1);
+
+
+    //identityConfiguration.
+    //identityConfiguration.getIssuerBackendUrl() = keycloakUrl;
+    //jwtConfig.getMap().forEach(this::retrieveToken);
     return this;
   }
 
-  private void retrieveToken(Product product, JwtCredential jwtCredential) {
-    try {
-      HttpPost httpPost = new HttpPost(authUrl);
-      httpPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-      Map<String, String> parameters = new HashMap<>();
-      parameters.put("grant_type", "client_credentials");
-      parameters.put("client_id", jwtCredential.clientId);
-      parameters.put("client_secret", jwtCredential.clientSecret);
 
-      String form = parameters.entrySet()
-        .stream()
-        .map(e -> {
-          try {
-            return e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8.toString());
-          } catch (UnsupportedEncodingException ex) {
-            throw new RuntimeException(ex);
-          }
-        })
-        .collect(Collectors.joining("&"));
+//  private void retrieveToken(Product product, JwtCredential jwtCredential) {
+//    Identity identity = identityMap.get(product).getIdentity();
+//    Tokens identityTokens = identity.authentication().requestToken(jwtCredential.audience);
+//    //tokens.put(product, identityTokens.getAccessToken());
+//    // TODO how to handle auto-refreshing of tokens?
+//    //expirations.put(product, LocalDateTime.now().plusSeconds(identityTokens.getExpiresIn()));
+//  }
 
-      httpPost.setEntity(new StringEntity(form));
-      CloseableHttpClient client = HttpClient.getInstance();
-      CloseableHttpResponse response = client.execute(httpPost);
-      TokenResponse tokenResponse =  jsonMapper.fromJson(EntityUtils.toString(response.getEntity()), TokenResponse.class);
-      // TODO: verify JWT has the desired permission vs what the user requested
-      tokens.put(product, tokenResponse.getAccessToken());
-      expirations.put(product, LocalDateTime.now().plusSeconds(tokenResponse.getExpiresIn()));
-    } catch (Exception e) {
-      LOG.warn("Authenticating for " + product + " failed due to " + e);
-      throw new RuntimeException("Unable to authenticate", e);
-    }
-  }
-
-  private void retrieveToken(Product product) {
-    JwtCredential jwtCredential = jwtConfig.getMap().get(product);
-    retrieveToken(product, jwtCredential);
-  }
+//  private void retrieveToken(Product product) {
+//    JwtCredential jwtCredential = jwtConfig.getMap().get(product);
+//    retrieveToken(product, jwtCredential);
+//  }
 
   @Override
   public Map.Entry<String, String> getTokenHeader(Product product) {
-    refreshToken();
-    return new AbstractMap.SimpleEntry<>("Authorization", "Bearer " + tokens.get(product));
+    //retrieveToken(product);
+    Identity identity = identityMap.get(product).getIdentity();
+    String audience = jwtConfig.getProduct(product).audience;
+    Tokens identityTokens = identity.authentication().requestToken(audience);
+    return new AbstractMap.SimpleEntry<>("Authorization", "Bearer " + identityTokens.getAccessToken());
   }
-
-  private void refreshToken() {
-    expirations.forEach((product, expiration) -> {
-      if (expiration.isAfter(LocalDateTime.now())) {
-        retrieveToken(product);
-      }
-    });
-  }
+//
+//  private void refreshToken() {
+//    expirations.forEach((product, expiration) -> {
+//      if (expiration.isAfter(LocalDateTime.now())) {
+//        retrieveToken(product);
+//      }
+//    });
+//  }
 }

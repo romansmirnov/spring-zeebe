@@ -1,5 +1,9 @@
 package io.camunda.common.auth;
 
+import io.camunda.common.auth.identity.IdentityMap;
+import io.camunda.identity.sdk.Identity;
+import io.camunda.identity.sdk.IdentityConfiguration;
+
 public class SelfManagedAuthenticationBuilder {
 
   SelfManagedAuthentication selfManagedAuthentication;
@@ -22,6 +26,11 @@ public class SelfManagedAuthenticationBuilder {
     if (keycloakRealm != null) {
       selfManagedAuthentication.setKeycloakRealm(keycloakRealm);
     }
+    return this;
+  }
+
+  public SelfManagedAuthenticationBuilder identityMap(IdentityMap identityMap) {
+    selfManagedAuthentication.setIdentityMap(identityMap);
     return this;
   }
 

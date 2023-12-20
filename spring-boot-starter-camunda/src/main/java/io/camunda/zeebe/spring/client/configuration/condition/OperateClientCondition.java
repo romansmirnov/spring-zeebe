@@ -19,4 +19,10 @@ public class OperateClientCondition extends AnyNestedCondition {
 
   @ConditionalOnProperty(name = "operate.client.base-url")
   static class BaseUrlCondition { }
+
+  @ConditionalOnProperty(name = "operate.client.url")
+  static class UrlCondition { }
+
+  @ConditionalOnProperty(name = "operate.client.enabled")
+  static class EnabledCondition { }
 }
